@@ -22,11 +22,12 @@ const dmMono = DM_Mono({
 });
 
 const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+const basePath = process.env.BUILD_MODE === "static" ? "/fyc-ballot" : "";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://jerrysoer.github.io/fyc-ballot"),
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    icon: [{ url: `${basePath}/icon.svg`, type: "image/svg+xml" }],
   },
   title: "For Your Consideration — 98th Oscars Ballot",
   description:
