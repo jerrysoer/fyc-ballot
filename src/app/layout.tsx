@@ -25,6 +25,9 @@ const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://jerrysoer.github.io/fyc-ballot"),
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
   title: "For Your Consideration — 98th Oscars Ballot",
   description:
     "Fill out your 2026 Oscars ballot. Get roasted. See how chaotic your picks are. Bury your wrong predictions in a cemetery after the ceremony.",
