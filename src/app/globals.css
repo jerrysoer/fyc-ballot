@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+:root {
+  --parchment: #F7F0E3;
+  --gold: #C9963A;
+  --gold-dim: rgba(201, 150, 58, 0.12);
+  --ink: #1A1A2E;
+  --chaos-red: #C43E1C;
+  --safe-blue: #2B5F8E;
+  --muted: #8C7B65;
+  --border: #D4C9B8;
+  --border-dark: #B5A897;
+  --card-bg: #FFFDF8;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03);
+
+  /* Cemetery overrides */
+  --cemetery-bg: #1A1A1A;
+  --cemetery-text: #D4D4D4;
+  --cemetery-muted: #6B6B6B;
+  --cemetery-card: #242424;
+}
+
+@theme inline {
+  --color-parchment: var(--parchment);
+  --color-gold: var(--gold);
+  --color-gold-dim: var(--gold-dim);
+  --color-ink: var(--ink);
+  --color-chaos-red: var(--chaos-red);
+  --color-safe-blue: var(--safe-blue);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-dark: var(--border-dark);
+  --color-card-bg: var(--card-bg);
+  --color-cemetery-bg: var(--cemetery-bg);
+  --color-cemetery-text: var(--cemetery-text);
+  --color-cemetery-muted: var(--cemetery-muted);
+  --color-cemetery-card: var(--cemetery-card);
+  --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-playfair);
+  --font-mono: var(--font-dm-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(201, 150, 58, 0.25);
+  color: var(--ink);
+}
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-card-in {
+  from { opacity: 0; transform: translateX(60px) scale(0.97); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes slide-card-out {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(-60px) scale(0.97); }
+}
+
+@keyframes tombstone-rise {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes chaos-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes gold-spark {
+  0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0.5) rotate(360deg); }
+}
+
+@keyframes stamp-in {
+  0% { opacity: 0; transform: scale(2) rotate(-15deg); }
+  60% { opacity: 1; transform: scale(0.9) rotate(-12deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-12deg); }
+}
+
+/* ═══════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════ */
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+.animate-slide-card-in {
+  animation: slide-card-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-card-out {
+  animation: slide-card-out 0.3s ease-in forwards;
+}
+
+.animate-tombstone-rise {
+  animation: tombstone-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-chaos-pulse {
+  animation: chaos-pulse 0.6s ease-in-out;
+}
+
+.animate-gold-spark {
+  animation: gold-spark 0.5s ease-out forwards;
+}
+
+.animate-stamp-in {
+  animation: stamp-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ═══════════════════════════════════════
+   PICK & INTERACTION ANIMATIONS
+   ═══════════════════════════════════════ */
+
+@keyframes pick-ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes chaos-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px) rotate(-0.5deg); }
+  75% { transform: translateX(3px) rotate(0.5deg); }
+}
+
+@keyframes loyalty-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 62, 28, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(196, 62, 28, 0); }
+}
+
+@keyframes confetti-burst {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-40px) rotate(360deg); opacity: 0; }
+}
+
+.animate-pick-ripple {
+  animation: pick-ripple 0.5s ease-out forwards;
+}
+
+.animate-chaos-shake {
+  animation: chaos-shake 0.4s ease-in-out;
+}
+
+.animate-loyalty-pulse {
+  animation: loyalty-pulse 1s ease-in-out;
+}
+
+/* ═══════════════════════════════════════
+   CHAOS METER GRADIENT
+   ═══════════════════════════════════════ */
+
+.chaos-gradient {
+  background: linear-gradient(
+    90deg,
+    var(--safe-blue) 0%,
+    #6B8FA8 25%,
+    var(--muted) 50%,
+    #B86432 75%,
+    var(--chaos-red) 100%
+  );
+}
+
+/* ═══════════════════════════════════════
+   CEMETERY THEME
+   ═══════════════════════════════════════ */
+
+.cemetery {
+  background: var(--cemetery-bg);
+  color: var(--cemetery-text);
+}
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--parchment);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-dark);
+}
+
+/* ═══════════════════════════════════════
+   FOCUS STYLES
+   ═══════════════════════════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
