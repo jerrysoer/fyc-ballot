@@ -31,14 +31,14 @@ export const archetypeReveals: Record<
 };
 
 export const chaosTaunts: Record<string, string> = {
-  "0-10": "Wow, a perfect score in cowardice. Your ballot is a Gold Derby screenshot.",
+  "0-10": "Wow, a perfect score in cowardice. Your ballot is a Gold Derby screenshot. You probably think the Wicked snub was justified too.",
   "11-20": "Playing it safe? Your picks have the personality of a studio press release.",
-  "21-35": "A dash of rebellion. You're like a PTA fan who also watches F1 unironically.",
-  "36-50": "Walking the line between taste and chaos. Perfectly balanced, like a Coogler film.",
+  "21-35": "A dash of rebellion. You've got PTA energy — inevitable, unstoppable, and just a little smug about it.",
+  "36-50": "Walking the line between taste and chaos. Perfectly balanced — like Coogler's composure at the BAFTAs.",
   "51-65": "Now we're talking. Your ballot has character. Questionable character, but character.",
   "66-80": "You're out here swinging. Half these picks will age like milk and you don't care.",
   "81-90": "Absolute menace energy. Your ballot reads like a dare.",
-  "91-100": "Pure chaos. You didn't fill out a ballot — you filed a noise complaint against the Academy.",
+  "91-100": "Pure chaos. You'd nominate Wicked: For Good just to watch the Academy squirm. Ariana Grande would be proud.",
 };
 
 export function getChaosTaunt(score: number): string {

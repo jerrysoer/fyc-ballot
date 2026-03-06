@@ -47,6 +47,28 @@ export const quizQuestions: QuizQuestion[] = [
   },
   {
     id: "q3",
+    question: "Wicked: For Good got zero Oscar nominations. Your reaction?",
+    options: [
+      {
+        label: "The Academy was right. That press tour was insufferable.",
+        archetype: "film-bro",
+      },
+      {
+        label: "Best thing to happen to the Oscars in years. Chaos reigns.",
+        archetype: "chaos-agent",
+      },
+      {
+        label: "The first one won two. Let it go.",
+        archetype: "safe-picker",
+      },
+      {
+        label: "Grande and Erivo deserved better. The Academy hates fun.",
+        archetype: "underdog-stan",
+      },
+    ],
+  },
+  {
+    id: "q4",
     question: "What's your relationship with Oscar predictions?",
     options: [
       {

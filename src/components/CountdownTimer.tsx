@@ -9,6 +9,7 @@ interface TimeLeft {
   days: number;
   hours: number;
   minutes: number;
+  totalHours: number;
 }
 
 function getTimeLeft(): TimeLeft | null {
@@ -21,6 +22,7 @@ function getTimeLeft(): TimeLeft | null {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
     hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
     minutes: Math.floor((diff / (1000 * 60)) % 60),
+    totalHours: diff / (1000 * 60 * 60),
   };
 }
 
@@ -49,6 +51,37 @@ export default function CountdownTimer() {
     );
   }
 
+  // < 1 hour: maximum urgency
+  if (timeLeft.totalHours < 1) {
+    return (
+      <div className="text-center mb-6 animate-fade-in">
+        <p className="text-sm font-mono text-chaos-red uppercase tracking-widest font-bold animate-pulse"
+           style={{ animationDuration: "0.8s" }}>
+          IT&apos;S HAPPENING
+        </p>
+        <p className="text-xs text-muted mt-1 font-mono">
+          {timeLeft.minutes} min until curtain
+        </p>
+      </div>
+    );
+  }
+
+  // < 24 hours: high urgency
+  if (timeLeft.totalHours < 24) {
+    return (
+      <div className="text-center mb-6 animate-fade-in">
+        <p className="text-sm font-mono text-gold uppercase tracking-widest font-bold animate-pulse">
+          TONIGHT — {timeLeft.hours > 0 ? `${timeLeft.hours} hr${timeLeft.hours !== 1 ? "s" : ""} ` : ""}
+          {timeLeft.minutes} min until Oscar night
+        </p>
+        <p className="text-xs text-muted mt-1 italic">
+          Conan promised explosions. Lock your ballot before the fuse lights.
+        </p>
+      </div>
+    );
+  }
+
+  // Default: calm countdown
   const parts: string[] = [];
   if (timeLeft.days > 0) parts.push(`${timeLeft.days} day${timeLeft.days !== 1 ? "s" : ""}`);
   if (timeLeft.hours > 0) parts.push(`${timeLeft.hours} hr${timeLeft.hours !== 1 ? "s" : ""}`);

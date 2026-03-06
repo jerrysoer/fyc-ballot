@@ -10,6 +10,7 @@ interface NomineeButtonProps {
   onSelect: (nomineeId: string) => void;
   odds?: number; // 0–1 probability from Polymarket
   polymarketSlug?: string;
+  isHotTake?: boolean; // odds < 30% AND selected
 }
 
 function formatOdds(odds: number): string {
@@ -28,6 +29,7 @@ export default function NomineeButton({
   onSelect,
   odds,
   polymarketSlug,
+  isHotTake,
 }: NomineeButtonProps) {
   return (
     <button
@@ -43,6 +45,11 @@ export default function NomineeButton({
         <div className="min-w-0">
           <p className={`font-semibold truncate ${isSelected ? "text-gold" : "text-ink"}`}>
             {nominee.name}
+            {isHotTake && (
+              <span className="ml-2 text-[10px] font-mono text-chaos-red animate-fade-in">
+                🔥 Hot Take
+              </span>
+            )}
           </p>
           <a
             href={getTrailerUrl(nominee.film)}

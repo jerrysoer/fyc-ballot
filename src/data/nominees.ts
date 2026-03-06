@@ -4,7 +4,7 @@ export const categories: Category[] = [
   {
     id: "best-picture",
     name: "Best Picture",
-    appComment: "The one everyone pretends to have seen. Pick wisely — or don't. We'll judge either way.",
+    appComment: "Ten films enter. PTA has won every precursor known to man. But Sinners has 16 nominations and TikTok. Your move.",
     nominees: [
       { id: "bugonia", name: "Bugonia", film: "Bugonia" },
       { id: "f1", name: "F1", film: "F1" },
@@ -21,7 +21,7 @@ export const categories: Category[] = [
   {
     id: "best-director",
     name: "Best Director",
-    appComment: "Who yelled 'cut' the best? Auteur theory is just astrology for film bros.",
+    appComment: "PTA or Coogler. DGA says PTA. TikTok says Coogler. Choose your algorithm.",
     nominees: [
       { id: "dir-pta", name: "Paul Thomas Anderson", film: "One Battle After Another", isFrontrunner: true },
       { id: "dir-coogler", name: "Ryan Coogler", film: "Sinners" },
@@ -45,7 +45,7 @@ export const categories: Category[] = [
   {
     id: "best-actor",
     name: "Best Actor",
-    appComment: "Someone lost 40 pounds for this. Another gained 40. Hollywood's idea of range.",
+    appComment: "Chalamet has the Golden Globe. MBJ has the SAG. This is the one race that might actually surprise you.",
     nominees: [
       { id: "actor-chalamet", name: "Timothée Chalamet", film: "Marty Supreme", isFrontrunner: true },
       { id: "actor-dicaprio", name: "Leonardo DiCaprio", film: "One Battle After Another" },
@@ -105,7 +105,7 @@ export const categories: Category[] = [
   {
     id: "best-animated-feature",
     name: "Best Animated Feature",
-    appComment: "Adults pretending they're watching for their kids. We see you.",
+    appComment: "Adults pretending they're watching for their kids. At least Wicked: For Good isn't here to complicate things.",
     nominees: [
       { id: "af-arco", name: "Arco", film: "Arco" },
       { id: "af-elio", name: "Elio", film: "Elio" },

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SessionData } from "@/types";
 import { getSession } from "@/lib/session";
 import { archetypeReveals, getChaosTaunt } from "@/data/copy";
@@ -13,14 +13,32 @@ import Leaderboard from "@/components/Leaderboard";
 import { getSinnersPickCount } from "@/lib/chaos";
 import { TOTAL_CATEGORIES, categories } from "@/data/nominees";
 import { useOdds, computeMarketAlignment, getOddsForNominee } from "@/hooks/useOdds";
-import { Trophy, Skull, TrendingUp, Check, X, Minus, Radio } from "lucide-react";
+import { Trophy, Skull, TrendingUp, Check, X, Minus, Radio, Link2 } from "lucide-react";
 import { apiUrl } from "@/lib/api";
+import BallotComparison from "@/components/BallotComparison";
+import ReceiptCard from "@/components/ReceiptCard";
 
 export default function ResultsPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="animate-fade-in text-muted">Loading results...</div>
+      </main>
+    }>
+      <ResultsContent />
+    </Suspense>
+  );
+}
+
+function ResultsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const compareId = searchParams.get("compare");
   const [session, setSession] = useState<SessionData | null>(null);
   const [totalBallots, setTotalBallots] = useState<number | null>(null);
   const [liveWinners, setLiveWinners] = useState<Record<string, string>>({});
+  const [winnerToast, setWinnerToast] = useState<string | null>(null);
+  const [compareCopied, setCompareCopied] = useState(false);
   const { odds } = useOdds();
 
   const fetchWinners = useCallback(async () => {
@@ -28,7 +46,23 @@ export default function ResultsPage() {
       const res = await fetch(apiUrl("/api/admin/winners"));
       if (res.ok) {
         const data = await res.json();
-        setLiveWinners(data.winners ?? {});
+        const newWinners: Record<string, string> = data.winners ?? {};
+        setLiveWinners((prev) => {
+          // Detect newly announced category
+          const prevKeys = Object.keys(prev);
+          const newKeys = Object.keys(newWinners);
+          if (newKeys.length > prevKeys.length) {
+            const newCatId = newKeys.find((k) => !prevKeys.includes(k));
+            if (newCatId) {
+              const catName = categories.find((c) => c.id === newCatId)?.name;
+              if (catName) {
+                setWinnerToast(`🏆 ${catName} just announced!`);
+                setTimeout(() => setWinnerToast(null), 5000);
+              }
+            }
+          }
+          return newWinners;
+        });
       }
     } catch {
       // silent
@@ -101,6 +135,15 @@ export default function ResultsPage() {
           </div>
         )}
 
+        {/* Winner announcement toast */}
+        {winnerToast && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+            <div className="bg-gold text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-lg">
+              {winnerToast}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in-up">
           <p className="text-sm font-mono text-muted uppercase tracking-widest mb-3">
@@ -160,6 +203,37 @@ export default function ResultsPage() {
         {hasCeremonyResults && session.sessionId && (
           <div className="mb-8 animate-fade-in" style={{ animationDelay: "650ms" }}>
             <Leaderboard sessionId={session.sessionId} />
+          </div>
+        )}
+
+        {/* Friend comparison */}
+        {compareId && session.archetype && (
+          <div className="animate-fade-in" style={{ animationDelay: "680ms" }}>
+            <BallotComparison
+              userPicks={session.picks}
+              userArchetype={session.archetype}
+              friendSessionId={compareId}
+              winners={liveWinners}
+            />
+          </div>
+        )}
+
+        {/* Compare with a friend button */}
+        {session.sessionId && (
+          <div className="text-center mb-6 animate-fade-in" style={{ animationDelay: "690ms" }}>
+            <button
+              onClick={async () => {
+                const url = `${window.location.origin}/results?compare=${session.sessionId}`;
+                await navigator.clipboard.writeText(url);
+                setCompareCopied(true);
+                setTimeout(() => setCompareCopied(false), 2500);
+              }}
+              className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink transition-colors
+                         border border-border rounded-lg px-4 py-2"
+            >
+              <Link2 size={14} />
+              {compareCopied ? "Link copied!" : "Compare with a friend"}
+            </button>
           </div>
         )}
 
@@ -303,6 +377,20 @@ export default function ResultsPage() {
             sinnersPickCount={sinnersPickCount}
           />
         </div>
+
+        {/* Post-ceremony receipt */}
+        {announcedCount >= TOTAL_CATEGORIES && (
+          <div className="mt-10 animate-fade-in" style={{ animationDelay: "900ms" }}>
+            <h3 className="font-serif font-bold text-ink text-center mb-4">Your Oscar Receipt</h3>
+            <ReceiptCard
+              archetype={session.archetype}
+              picks={session.picks}
+              chaosScore={chaosScore}
+              winners={liveWinners}
+              odds={odds}
+            />
+          </div>
+        )}
       </div>
     </main>
   );

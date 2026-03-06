@@ -2,6 +2,7 @@
 
 import { Category } from "@/types";
 import { polymarketSlugs } from "@/data/polymarket-slugs";
+import { discourse } from "@/data/discourse";
 import NomineeButton from "./NomineeButton";
 
 interface CategoryCardProps {
@@ -47,21 +48,34 @@ export default function CategoryCard({
         {category.name}
       </h2>
 
-      <p className="font-serif italic text-muted mb-6 leading-relaxed">
+      <p className="font-serif italic text-muted mb-2 leading-relaxed">
         &ldquo;{category.appComment}&rdquo;
       </p>
 
+      {discourse[category.id] && (
+        <p className="text-xs italic text-muted/70 mb-6">
+          💬 {discourse[category.id]}
+        </p>
+      )}
+
       <div className="space-y-3">
-        {category.nominees.map((nominee) => (
-          <NomineeButton
-            key={nominee.id}
-            nominee={nominee}
-            isSelected={selectedNominee === nominee.id}
-            onSelect={(nomineeId) => onSelect(category.id, nomineeId)}
-            odds={odds?.[nominee.id]}
-            polymarketSlug={polymarketSlugs[category.id]}
-          />
-        ))}
+        {category.nominees.map((nominee) => {
+          const nomineeOdds = odds?.[nominee.id];
+          const isHotTake = selectedNominee === nominee.id
+            && nomineeOdds !== undefined
+            && nomineeOdds < 0.30;
+          return (
+            <NomineeButton
+              key={nominee.id}
+              nominee={nominee}
+              isSelected={selectedNominee === nominee.id}
+              onSelect={(nomineeId) => onSelect(category.id, nomineeId)}
+              odds={nomineeOdds}
+              polymarketSlug={polymarketSlugs[category.id]}
+              isHotTake={isHotTake}
+            />
+          );
+        })}
       </div>
 
       {pickedPercentage !== undefined && (

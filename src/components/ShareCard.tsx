@@ -81,6 +81,18 @@ export default function ShareCard({
     }
   }, [chaosScore, chaosLabel, info.title, hasCeremonyResults, finalScore]);
 
+  const handleShareToX = useCallback(() => {
+    const text = hasCeremonyResults
+      ? `My 98th Oscars ballot: ${finalScore ?? 0}/${TOTAL_CATEGORIES} correct. Chaos score: ${chaosScore}/100. I'm a ${info.title}. \ud83c\udfac`
+      : `My Oscars ballot is locked. Chaos score: ${chaosScore}/100. I'm a ${info.title}. Think you can beat me? \ud83c\udfac`;
+    const url = "https://jerrysoer.github.io/fyc-ballot";
+    window.open(
+      `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      "_blank",
+    );
+    trackEvent("card-shared", { platform: "twitter" });
+  }, [chaosScore, info.title, hasCeremonyResults, finalScore]);
+
   return (
     <div>
       {/* The actual card rendered for html2canvas */}
@@ -210,7 +222,7 @@ export default function ShareCard({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3 justify-center mt-6">
+      <div className="flex gap-3 justify-center mt-6 flex-wrap">
         <button
           onClick={handleDownload}
           className="flex items-center gap-2 px-5 py-3 bg-gold text-white font-semibold rounded-lg
@@ -226,6 +238,14 @@ export default function ShareCard({
         >
           <Share2 size={18} />
           Share
+        </button>
+        <button
+          onClick={handleShareToX}
+          className="flex items-center gap-2 px-5 py-3 border border-gold text-gold font-semibold rounded-lg
+                     hover:bg-gold-dim transition-colors min-h-[48px]"
+        >
+          <span className="text-lg leading-none">{"\ud835\udd4f"}</span>
+          Share to {"\ud835\udd4f"}
         </button>
       </div>
     </div>

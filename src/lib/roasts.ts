@@ -52,6 +52,12 @@ export function getMidBallotRoast(
     }
   }
 
+  // Pick-specific roasts (topical)
+  const pickRoast = detectPickSpecificRoast(picks);
+  if (pickRoast) {
+    roasts.push(pickRoast);
+  }
+
   // Film concentration detection
   const filmConcentration = detectFilmConcentration(picks);
   if (filmConcentration) {
@@ -75,7 +81,7 @@ export function getMidBallotRoast(
     });
   } else if (currentIndex === milestones[1] && Object.keys(picks).length >= milestones[1] + 1) {
     roasts.push({
-      message: "Halfway there. Your ballot personality is forming. It's... interesting.",
+      message: "You're picking like someone who gets their takes from Film Twitter and their confidence from Polymarket.",
       type: "milestone",
     });
   } else if (currentIndex === milestones[2] && Object.keys(picks).length >= milestones[2] + 1) {
@@ -124,6 +130,34 @@ function detectAntiStreak(picks: Record<string, string>): number {
     }
   }
   return streak;
+}
+
+function detectPickSpecificRoast(picks: Record<string, string>): Roast | null {
+  // MBJ over Chalamet in Best Actor
+  if (picks["best-actor"] === "actor-jordan") {
+    return {
+      message: "MBJ over Chalamet? The SAG voters salute you. The bookies do not.",
+      type: "pattern",
+    };
+  }
+
+  // PTA's One Battle After Another for Best Picture
+  if (picks["best-picture"] === "one-battle") {
+    return {
+      message: "One Battle After Another? You and every precursor award agree. Groundbreaking.",
+      type: "pattern",
+    };
+  }
+
+  // Sinners for Best Picture
+  if (picks["best-picture"] === "sinners") {
+    return {
+      message: "Sinners for Best Picture? Polymarket gives it 18%. You're either a prophet or a menace.",
+      type: "pattern",
+    };
+  }
+
+  return null;
 }
 
 function detectFilmConcentration(picks: Record<string, string>): Roast | null {
