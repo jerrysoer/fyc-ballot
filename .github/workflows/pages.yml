@@ -24,7 +24,7 @@ jobs:
       - run: npm run build
         env:
           BUILD_MODE: static
-          NEXT_PUBLIC_API_URL: https://fyc-ballot-api.vercel.app
+          NEXT_PUBLIC_API_URL: https://foryourconsiderationballot.vercel.app
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
