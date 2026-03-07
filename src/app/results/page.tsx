@@ -10,12 +10,27 @@ const archetypeTitles: Record<string, string> = {
   "underdog-stan": "The Underdog Stan",
 };
 
+// Static export (GitHub Pages) can't use searchParams in metadata — every
+// request gets the same HTML.  Dynamic OG cards only work on the Vercel
+// deployment where generateMetadata can read query params at request time.
+const isStatic = process.env.BUILD_MODE === "static";
+
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const params = await searchParams;
+export async function generateMetadata(
+  props: Props,
+): Promise<Metadata> {
+  if (isStatic) {
+    return {
+      title: "Your Results — 98th Oscars Ballot",
+      description:
+        "See your chaos score, archetype, and how your picks compare to the market.",
+    };
+  }
+
+  const params = await props.searchParams;
   const score = params.score as string | undefined;
   const archetype = params.archetype as string | undefined;
   const picks = params.picks as string | undefined;
@@ -51,7 +66,8 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   // Default metadata (no share params — user viewing their own results)
   return {
     title: "Your Results — 98th Oscars Ballot",
-    description: "See your chaos score, archetype, and how your picks compare to the market.",
+    description:
+      "See your chaos score, archetype, and how your picks compare to the market.",
   };
 }
 
