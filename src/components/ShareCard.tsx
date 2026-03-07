@@ -40,6 +40,10 @@ export default function ShareCard({
 
   const info = archetypeReveals[archetype];
   const chaosLabel = getChaosLabel(chaosScore);
+  const pickCount = Object.keys(picks).length;
+
+  // Build share URL with OG params so social crawlers render the dynamic card
+  const shareUrl = `https://jerrysoer.github.io/fyc-ballot/results?score=${chaosScore}&archetype=${archetype}&picks=${pickCount}`;
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current) return;
@@ -70,28 +74,27 @@ export default function ShareCard({
 
     if (navigator.share) {
       try {
-        await navigator.share({ text });
+        await navigator.share({ text, url: shareUrl });
         trackEvent("card-shared");
       } catch {
         // User cancelled
       }
     } else {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
       trackEvent("card-shared");
     }
-  }, [chaosScore, chaosLabel, info.title, hasCeremonyResults, finalScore]);
+  }, [chaosScore, chaosLabel, info.title, hasCeremonyResults, finalScore, shareUrl]);
 
   const handleShareToX = useCallback(() => {
     const text = hasCeremonyResults
       ? `My 98th Oscars ballot: ${finalScore ?? 0}/${TOTAL_CATEGORIES} correct. Chaos score: ${chaosScore}/100. I'm a ${info.title}. \ud83c\udfac`
       : `My Oscars ballot is locked. Chaos score: ${chaosScore}/100. I'm a ${info.title}. Think you can beat me? \ud83c\udfac`;
-    const url = "https://jerrysoer.github.io/fyc-ballot";
     window.open(
-      `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
       "_blank",
     );
     trackEvent("card-shared", { platform: "twitter" });
-  }, [chaosScore, info.title, hasCeremonyResults, finalScore]);
+  }, [chaosScore, info.title, hasCeremonyResults, finalScore, shareUrl]);
 
   return (
     <div>

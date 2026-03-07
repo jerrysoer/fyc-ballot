@@ -1,397 +1,60 @@
-"use client";
+import type { Metadata } from "next";
+import ResultsClient from "./ResultsClient";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { SessionData } from "@/types";
-import { getSession } from "@/lib/session";
-import { archetypeReveals, getChaosTaunt } from "@/data/copy";
-import { computeChaosScore } from "@/lib/chaos";
-import ShareCard from "@/components/ShareCard";
-import ChaosMeter from "@/components/ChaosMeter";
-import SinnersTracker from "@/components/SinnersTracker";
-import Leaderboard from "@/components/Leaderboard";
-import { getSinnersPickCount } from "@/lib/chaos";
-import { TOTAL_CATEGORIES, categories } from "@/data/nominees";
-import { useOdds, computeMarketAlignment, getOddsForNominee } from "@/hooks/useOdds";
-import { Trophy, Skull, TrendingUp, Check, X, Minus, Radio, Link2 } from "lucide-react";
-import { apiUrl } from "@/lib/api";
-import BallotComparison from "@/components/BallotComparison";
-import ReceiptCard from "@/components/ReceiptCard";
+const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-export default function ResultsPage() {
-  return (
-    <Suspense fallback={
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="animate-fade-in text-muted">Loading results...</div>
-      </main>
-    }>
-      <ResultsContent />
-    </Suspense>
-  );
+const archetypeTitles: Record<string, string> = {
+  "film-bro": "The Film Bro",
+  "chaos-agent": "The Chaos Agent",
+  "safe-picker": "The Safe Picker",
+  "underdog-stan": "The Underdog Stan",
+};
+
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const params = await searchParams;
+  const score = params.score as string | undefined;
+  const archetype = params.archetype as string | undefined;
+  const picks = params.picks as string | undefined;
+
+  // If share params are present, generate a personalized OG image
+  if (score && archetype) {
+    const ogParams = new URLSearchParams({
+      score,
+      archetype,
+      ...(picks ? { picks } : {}),
+    });
+    const ogUrl = `${apiBase}/api/og/results?${ogParams.toString()}`;
+    const title = archetypeTitles[archetype] ?? "The Wildcard";
+
+    return {
+      title: `${title} — 98th Oscars Ballot`,
+      description: `Chaos score: ${score}/100. Think you can do better? Fill out your own ballot and get roasted.`,
+      openGraph: {
+        title: `${title} — 98th Oscars Ballot`,
+        description: `Chaos score: ${score}/100. Think you can do better?`,
+        type: "website",
+        images: [{ url: ogUrl, width: 1200, height: 630 }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${title} — 98th Oscars Ballot`,
+        description: `Chaos score: ${score}/100. Think you can do better?`,
+        images: [ogUrl],
+      },
+    };
+  }
+
+  // Default metadata (no share params — user viewing their own results)
+  return {
+    title: "Your Results — 98th Oscars Ballot",
+    description: "See your chaos score, archetype, and how your picks compare to the market.",
+  };
 }
 
-function ResultsContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const compareId = searchParams.get("compare");
-  const [session, setSession] = useState<SessionData | null>(null);
-  const [totalBallots, setTotalBallots] = useState<number | null>(null);
-  const [liveWinners, setLiveWinners] = useState<Record<string, string>>({});
-  const [winnerToast, setWinnerToast] = useState<string | null>(null);
-  const [compareCopied, setCompareCopied] = useState(false);
-  const { odds } = useOdds();
-
-  const fetchWinners = useCallback(async () => {
-    try {
-      const res = await fetch(apiUrl("/api/admin/winners"));
-      if (res.ok) {
-        const data = await res.json();
-        const newWinners: Record<string, string> = data.winners ?? {};
-        setLiveWinners((prev) => {
-          // Detect newly announced category
-          const prevKeys = Object.keys(prev);
-          const newKeys = Object.keys(newWinners);
-          if (newKeys.length > prevKeys.length) {
-            const newCatId = newKeys.find((k) => !prevKeys.includes(k));
-            if (newCatId) {
-              const catName = categories.find((c) => c.id === newCatId)?.name;
-              if (catName) {
-                setWinnerToast(`🏆 ${catName} just announced!`);
-                setTimeout(() => setWinnerToast(null), 5000);
-              }
-            }
-          }
-          return newWinners;
-        });
-      }
-    } catch {
-      // silent
-    }
-  }, []);
-
-  useEffect(() => {
-    const s = getSession();
-    if (!s?.submitted || !s.archetype) {
-      router.push("/");
-      return;
-    }
-    setSession(s);
-
-    // Fetch lightweight stats
-    fetch(apiUrl("/api/stats"))
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.totalBallots) setTotalBallots(data.totalBallots);
-      })
-      .catch(() => {});
-
-    // Fetch live winners
-    fetchWinners();
-
-    // Poll every 30 seconds during ceremony
-    const interval = setInterval(fetchWinners, 30000);
-    return () => clearInterval(interval);
-  }, [router, fetchWinners]);
-
-  if (!session || !session.archetype) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="animate-fade-in text-muted">Loading results...</div>
-      </main>
-    );
-  }
-
-  const info = archetypeReveals[session.archetype];
-  const chaosScore = session.picks && Object.keys(session.picks).length > 0
-    ? computeChaosScore(session.picks)
-    : 50;
-
-  const chaosTaunt = getChaosTaunt(chaosScore);
-  const announcedCount = Object.keys(liveWinners).length;
-  const hasCeremonyResults = announcedCount > 0;
-  const isLive = hasCeremonyResults && announcedCount < TOTAL_CATEGORIES;
-  const sinnersPickCount = session.picks ? getSinnersPickCount(session.picks) : 0;
-
-  // Calculate live score
-  let finalScore = 0;
-  if (hasCeremonyResults) {
-    for (const [catId, winnerId] of Object.entries(liveWinners)) {
-      if (session.picks[catId] === winnerId) {
-        finalScore++;
-      }
-    }
-  }
-
-  return (
-    <main className="min-h-screen px-4 py-12">
-      <div className="max-w-lg mx-auto">
-        {/* Live indicator */}
-        {isLive && (
-          <div className="flex items-center justify-center gap-2 mb-4 animate-fade-in">
-            <Radio size={14} className="text-chaos-red animate-pulse" />
-            <span className="text-xs font-mono uppercase tracking-widest text-chaos-red font-bold">
-              Live — {announcedCount}/{TOTAL_CATEGORIES} announced
-            </span>
-          </div>
-        )}
-
-        {/* Winner announcement toast */}
-        {winnerToast && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-            <div className="bg-gold text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-lg">
-              {winnerToast}
-            </div>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="text-center mb-8 animate-fade-in-up">
-          <p className="text-sm font-mono text-muted uppercase tracking-widest mb-3">
-            Your Ballot Is Locked
-          </p>
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-ink mb-3">
-            {info.title}
-          </h1>
-          <p className="font-serif italic text-gold text-lg">
-            {info.tagline}
-          </p>
-        </div>
-
-        {/* Chaos meter */}
-        <div className="mb-6 animate-fade-in" style={{ animationDelay: "200ms" }}>
-          <ChaosMeter score={chaosScore} />
-        </div>
-
-        {/* Taunt */}
-        <div className="bg-card-bg border border-border rounded-xl p-5 mb-8 animate-fade-in"
-             style={{ animationDelay: "400ms" }}>
-          <p className="font-serif italic text-ink text-center leading-relaxed">
-            &ldquo;{chaosTaunt}&rdquo;
-          </p>
-        </div>
-
-        {/* Sinners loyalty tracker */}
-        {sinnersPickCount > 0 && (
-          <div className="mb-6 animate-fade-in" style={{ animationDelay: "500ms" }}>
-            <SinnersTracker sinnersPickCount={sinnersPickCount} />
-          </div>
-        )}
-
-        {/* Post-ceremony score */}
-        {hasCeremonyResults && (
-          <div className="text-center mb-8 animate-fade-in" style={{ animationDelay: "600ms" }}>
-            <div className="inline-flex items-center gap-3 bg-gold/10 border border-gold/20 rounded-xl px-6 py-4">
-              <Trophy className="text-gold" size={24} />
-              <div>
-                <p className="text-3xl font-mono font-bold text-ink">{finalScore}/{announcedCount}</p>
-                <p className="text-sm text-muted">correct predictions</p>
-              </div>
-            </div>
-            <div className="mt-3">
-              <button
-                onClick={() => router.push("/cemetery")}
-                className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink transition-colors"
-              >
-                <Skull size={14} />
-                Visit the cemetery
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Leaderboard */}
-        {hasCeremonyResults && session.sessionId && (
-          <div className="mb-8 animate-fade-in" style={{ animationDelay: "650ms" }}>
-            <Leaderboard sessionId={session.sessionId} />
-          </div>
-        )}
-
-        {/* Friend comparison */}
-        {compareId && session.archetype && (
-          <div className="animate-fade-in" style={{ animationDelay: "680ms" }}>
-            <BallotComparison
-              userPicks={session.picks}
-              userArchetype={session.archetype}
-              friendSessionId={compareId}
-              winners={liveWinners}
-            />
-          </div>
-        )}
-
-        {/* Compare with a friend button */}
-        {session.sessionId && (
-          <div className="text-center mb-6 animate-fade-in" style={{ animationDelay: "690ms" }}>
-            <button
-              onClick={async () => {
-                const url = `${window.location.origin}/results?compare=${session.sessionId}`;
-                await navigator.clipboard.writeText(url);
-                setCompareCopied(true);
-                setTimeout(() => setCompareCopied(false), 2500);
-              }}
-              className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink transition-colors
-                         border border-border rounded-lg px-4 py-2"
-            >
-              <Link2 size={14} />
-              {compareCopied ? "Link copied!" : "Compare with a friend"}
-            </button>
-          </div>
-        )}
-
-        {/* Your Picks breakdown */}
-        {hasCeremonyResults && (
-          <div className="bg-card-bg border border-border rounded-xl p-5 mb-8 animate-fade-in"
-               style={{ animationDelay: "700ms" }}>
-            <h3 className="font-serif font-bold text-ink mb-4">Your Picks</h3>
-            <div className="space-y-2">
-              {categories.map((cat) => {
-                const userPick = session.picks[cat.id];
-                const userNominee = cat.nominees.find((n) => n.id === userPick);
-                const winnerId = liveWinners[cat.id];
-                const winnerNominee = winnerId
-                  ? cat.nominees.find((n) => n.id === winnerId)
-                  : null;
-                const isCorrect = winnerId && userPick === winnerId;
-                const isWrong = winnerId && userPick !== winnerId;
-
-                return (
-                  <div
-                    key={cat.id}
-                    className={`flex items-start gap-2 py-2 border-b border-border/50 last:border-0 ${
-                      isCorrect ? "animate-fade-in" : ""
-                    }`}
-                  >
-                    {/* Status icon */}
-                    <div className="shrink-0 mt-0.5">
-                      {isCorrect ? (
-                        <div className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center">
-                          <Check size={12} className="text-white" />
-                        </div>
-                      ) : isWrong ? (
-                        <div className="w-5 h-5 rounded-full bg-chaos-red flex items-center justify-center">
-                          <X size={12} className="text-white" />
-                        </div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-border flex items-center justify-center">
-                          <Minus size={12} className="text-muted" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Category details */}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-mono text-muted uppercase tracking-wider">
-                        {cat.name}
-                      </p>
-                      <p className={`text-sm font-semibold ${
-                        isCorrect ? "text-emerald-600" : isWrong ? "text-ink" : "text-muted"
-                      }`}>
-                        {userNominee?.name ?? "No pick"}
-                      </p>
-                      {isWrong && winnerNominee && (
-                        <p className="text-xs text-muted mt-0.5">
-                          Winner: <span className="text-gold font-semibold">{winnerNominee.name}</span>
-                        </p>
-                      )}
-                      {!winnerId && (
-                        <p className="text-xs italic text-muted mt-0.5">Awaiting...</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Your Picks vs. The Market */}
-        {session.picks && Object.keys(odds).length > 0 && (() => {
-          const { alignment, total, matched } = computeMarketAlignment(session.picks, odds);
-
-          // Find boldest pick (lowest odds among user picks)
-          let boldestPick: { category: string; nominee: string; odds: number } | null = null;
-          for (const cat of categories) {
-            const pickId = session.picks[cat.id];
-            if (!pickId) continue;
-            const prob = getOddsForNominee(odds, cat.id, pickId);
-            if (prob !== undefined && (!boldestPick || prob < boldestPick.odds)) {
-              const nom = cat.nominees.find((n) => n.id === pickId);
-              if (nom) {
-                boldestPick = { category: cat.name, nominee: nom.name, odds: prob };
-              }
-            }
-          }
-
-          return (
-            <div className="bg-card-bg border border-border rounded-xl p-5 mb-8 animate-fade-in"
-                 style={{ animationDelay: "750ms" }}>
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={16} className="text-gold" />
-                <h3 className="font-serif font-bold text-ink">Your Picks vs. The Market</h3>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted">
-                  You agreed with Polymarket&apos;s favorite in{" "}
-                  <span className="font-mono font-bold text-ink">{matched}/{total}</span>{" "}
-                  categories ({alignment}% market alignment).
-                </p>
-                {alignment >= 70 ? (
-                  <p className="text-xs italic text-muted">
-                    You&apos;re a market follower. Safe money likes safe money.
-                  </p>
-                ) : alignment <= 30 ? (
-                  <p className="text-xs italic text-chaos-red">
-                    Market rebel. The bettors would hate your ballot.
-                  </p>
-                ) : (
-                  <p className="text-xs italic text-muted">
-                    A healthy mix of conviction and consensus.
-                  </p>
-                )}
-                {boldestPick && boldestPick.odds < 0.15 && (
-                  <p className="text-xs text-chaos-red font-mono mt-2">
-                    Boldest pick: {boldestPick.nominee} ({boldestPick.category}) at {Math.round(boldestPick.odds * 100)}% odds
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Stats */}
-        {totalBallots && (
-          <p className="text-center text-sm text-muted mb-8 font-mono">
-            {totalBallots.toLocaleString()} ballots submitted
-          </p>
-        )}
-
-        {/* Share card */}
-        <div className="animate-fade-in" style={{ animationDelay: "800ms" }}>
-          <ShareCard
-            archetype={session.archetype}
-            picks={session.picks}
-            chaosScore={chaosScore}
-            finalScore={hasCeremonyResults ? finalScore : undefined}
-            marketAlignment={Object.keys(odds).length > 0
-              ? computeMarketAlignment(session.picks, odds).alignment
-              : undefined}
-            sinnersPickCount={sinnersPickCount}
-          />
-        </div>
-
-        {/* Post-ceremony receipt */}
-        {announcedCount >= TOTAL_CATEGORIES && (
-          <div className="mt-10 animate-fade-in" style={{ animationDelay: "900ms" }}>
-            <h3 className="font-serif font-bold text-ink text-center mb-4">Your Oscar Receipt</h3>
-            <ReceiptCard
-              archetype={session.archetype}
-              picks={session.picks}
-              chaosScore={chaosScore}
-              winners={liveWinners}
-              odds={odds}
-            />
-          </div>
-        )}
-      </div>
-    </main>
-  );
+export default function ResultsPage() {
+  return <ResultsClient />;
 }
